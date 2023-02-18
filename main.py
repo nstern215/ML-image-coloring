@@ -19,9 +19,9 @@ def normalize_gray_pixels(img):
 
 # %% preprocess images for PCA
 
-gray_images = [normalize_gray_pixels(color.rgb2gray(img).flatten()) for img in train_data.images]
+# gray_images = [normalize_gray_pixels(color.rgb2gray(img).flatten()) for img in train_data.images]
 
-# gray_images = [color.rgb2lab(img)[:,:,0].flatten() for img in train_data.images]
+gray_images = [color.rgb2lab(img)[:,:,0].flatten() for img in train_data.images]
 
 # %% classifier
 
@@ -33,7 +33,7 @@ clf.fit(gray_images)
 
 test_images_path = 'C:\\ws\\faces_sets\\faces_sets\\test_set'
 test_data = ImagesDataset(path=test_images_path)
-test_data.load(verbose=True)
+test_data.load(verbose=False)
 
 # %% preprocess test images
 
@@ -79,8 +79,8 @@ gray_img = img_as_float(gray_img)
 sim_img = img_as_float(sim_img)
 sim_gray_img = img_as_float(sim_gray_img)
 
-gray_image_segments = slic(gray_img.reshape(200, 180), n_segments=5000, compactness=0.1, sigma=1)
-sim_gray_img_segments = slic(sim_gray_img.reshape(200, 180), n_segments=5000, compactness=0.1, sigma=1)
+gray_image_segments = slic(gray_img.reshape(200, 180), n_segments=250, compactness=0.1, sigma=1)
+sim_gray_img_segments = slic(sim_gray_img.reshape(200, 180), n_segments=250, compactness=0.1, sigma=1)
 
 fig, ax = plt.subplots(1, 2, figsize=(10, 10))
 
@@ -180,7 +180,7 @@ def create_features_matrix(segments_features):
         # features = [segment[0], segment[1], segment[4], segment[6]]
 
         # features = [segment[0], segment[1], segment[5][0], segment[5][1], segment[7], segment[8]]
-        features = [segment[0], segment[1], segment[7], segment[8]]
+        features = [segment[0], segment[7], segment[8]]
 
         features_matrix.append(features)
 
@@ -217,7 +217,7 @@ def find_match_segment(gray_segment_features, sim_gray_features_matrix):
 
         if distance < min_distance:
             min_distance = distance
-            min_index = i
+            min_index = i+1
 
     return min_index, min_distance
 
@@ -313,22 +313,50 @@ def find_best_color_in_segment(segment_indexes, sim_img_lab):
     return a_mode, b_mode
 
 
+def find_color_by_luminace(l_val, sim_image_lab, sim_segment_indexes):
+    a = 0
+    b = 0
+    
+    l_distance = np.inf
+
+    for index in sim_segment_indexes:
+        l = sim_image_lab[index][0]
+        distance = np.abs(l - l_val)
+
+        if distance < l_distance:
+            l_distance = distance
+            a = sim_image_lab[index][1]
+            b = sim_image_lab[index][2]
+    
+    return a, b
+
+
 target_img_lab = np.zeros((200, 180, 3))
 target_img_lab[:, :, 0] = gray_img.reshape(200, 180)
 
 for key in segments_mapping.keys():
     target_img_lab_segment_indexes = gray_image_segments_map[key]
     
-    try:
-        sim_img_lab_segment_indexes = sim_gray_img_segments_map[segments_mapping[key][0]]
-    
-        a_mode, b_mode = find_best_color_in_segment(sim_img_lab_segment_indexes, sim_img_lab)
+    for index in target_img_lab_segment_indexes:
+        try:
+            l_val = target_img_lab[index][0]
+            a, b = find_color_by_luminace(l_val, sim_img_lab, sim_gray_img_segments_map[segments_mapping[key][0]])
 
-        for index in target_img_lab_segment_indexes:
-            target_img_lab[index][1] = a_mode
-            target_img_lab[index][2] = b_mode
-    except:
-        print('segment not found {}'.format(key))
+            target_img_lab[index][1] = a
+            target_img_lab[index][2] = b
+        except:
+            print('segment not found {}'.format(key))
+
+    # try:
+    #     sim_img_lab_segment_indexes = sim_gray_img_segments_map[segments_mapping[key][0]]
+    
+    #     a_mode, b_mode = find_best_color_in_segment(sim_img_lab_segment_indexes, sim_img_lab)
+
+    #     for index in target_img_lab_segment_indexes:
+    #         target_img_lab[index][1] = a_mode
+    #         target_img_lab[index][2] = b_mode
+    # except:
+    #     print('segment not found {}'.format(key))
 
 # %% test segment matching
 
@@ -390,4 +418,96 @@ ax[1].set_title('L channel')
 ax[2].imshow(sim_img_lab[:, :, 1], cmap=a_cmap)
 ax[2].set_title('a channel')
 
+plt.show()
+
+# %%
+
+# calc min, max and average size of gray_img segments
+
+gray_img_segments_sizes = [len(gray_image_segments_map[key]) for key in gray_image_segments_map.keys()]
+
+print('min size: ', min(gray_img_segments_sizes))
+print('max size: ', max(gray_img_segments_sizes))
+print('average size: ', np.mean(gray_img_segments_sizes))
+
+# %% analyze color distribution in segments
+
+# %% score coloring
+
+score = np.linalg.norm(target_img_lab.flatten() - test_data.images[0].flatten())
+
+print('score: ', score)
+
+
+# %% simpler method
+
+def find_pixel_color(l, sim_img_lab):
+    a = 0
+    b = 0
+    
+    l_distance = np.inf
+
+    for i in range(200):
+        for j in range(180):
+            l_val = sim_img_lab[i][j][0]
+            distance = np.abs(l_val - l)
+
+            if distance < l_distance:
+                l_distance = distance
+                a = sim_img_lab[i][j][1]
+                b = sim_img_lab[i][j][2]
+    
+    return a, b
+    
+
+new_target = np.zeros((200, 180, 3))
+
+# copy test_image L channel to new_target
+new_target[:, :, 0] = test_data.images[0][:, :, 0]
+
+from time import time
+
+start = time()
+
+for i in range(200):
+    for j in range(180):
+        a,b = find_pixel_color(target_img_lab[i][j][0], sim_img_lab)
+        # print(a, b)
+        new_target[i][j][1] = a
+        new_target[i][j][2] = b
+
+print('time: ', time() - start)
+
+# plot sim img in the left
+# plot gray img in the middle
+# plot target img in the right
+
+fig, ax = plt.subplots(1, 3, figsize=(15, 15))
+
+ax[0].imshow(sim_img)
+ax[0].set_title('sim img')
+
+ax[1].imshow(gray_img, cmap='gray')
+ax[1].set_title('gray img')
+
+ax[2].imshow(new_target)
+ax[2].set_title('target img')
+
+plt.show()
+
+# %% avg image
+
+avg_img = np.zeros((200, 180, 3))
+
+for i in range(200):
+    for j in range(180):
+        avg_img[i][j][0] = np.mean([img[i][j][0] for img in train_data.images])
+        avg_img[i][j][1] = np.mean([img[i][j][1] for img in train_data.images])
+        avg_img[i][j][2] = np.mean([img[i][j][2] for img in train_data.images])
+
+# set avg_img values dtype int
+avg_img = avg_img.astype(int)
+
+
+plt.imshow(avg_img)
 plt.show()
