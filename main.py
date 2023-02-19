@@ -511,3 +511,13 @@ avg_img = avg_img.astype(int)
 
 plt.imshow(avg_img)
 plt.show()
+
+# %%
+
+sim_img = avg_img
+sim_gray_img = color.rgb2gray(sim_img).flatten()
+
+# %%
+
+# set target_img_lab dtype int in range 0-255
+target_img_lab = target_img_lab.astype(int)

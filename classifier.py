@@ -38,6 +38,12 @@ class PCAClassifier:
         None.
 
         """
+
+        X = np.array(X)
+
+        if len(X.shape) > 2:
+            X = X.reshape(X.shape[0], -1)
+
         X_pca = self.pca.fit_transform(X)
         self.components_ = self.pca.components_
 
