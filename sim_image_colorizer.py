@@ -54,9 +54,6 @@ class Colorizer:
             The available methods are:
                 'average' - average the three channels.
                 'luminosity' - luminosity method.
-                'red' - red channel.
-                'green' - green channel.
-                'blue' - blue channel.
         verbose : bool, optional
             Print the progress. The default is False.
         """
@@ -98,9 +95,11 @@ class Colorizer:
 
             from skimage.segmentation import slic
 
-            segments = kwargs.pop('segments', 250)            
-            compactness = kwargs.pop('compactness', 0.1)
+            segments = kwargs.pop('segments', 350)            
+            compactness = kwargs.pop('compactness', 0.5)
             sigma = kwargs.pop('sigma', 1)
+
+            print(f'Calculating segmentation with segments={segments}, compactness={compactness}, sigma={sigma}')
 
             return slic(image, n_segments=segments, compactness=compactness, sigma=sigma)
 
@@ -291,7 +290,8 @@ class Colorizer:
         features_matrix = []
 
         for feature in features:
-            features_matrix.append([feature[0], feature[10], feature[11]])
+            # features_matrix.append([feature[0], feature[10], feature[11]])
+            features_matrix.append([feature[0], feature[1], feature[2], feature[3], feature[4], feature[5], feature[6], feature[7], feature[8], feature[9]])
 
         return np.array(features_matrix)
 
@@ -391,7 +391,7 @@ class Colorizer:
         
         return a, b
 
-    def colorize(self, image, gray_method='average', segmentation_method='slic', verbose=True, **kwargs):
+    def colorize(self, image, ref_img=None, segmentation_method='slic', target_output_color_space='rgb', verbose=True, **kwargs):
         """
         Colorize the image using the dataset
 
@@ -403,15 +403,9 @@ class Colorizer:
         Parameters
         ----------
         image : numpy array
-            The image to colorize.
-        gray_method : str, optional
-            The method to use for conversion. The default is 'average'.
-            The available methods are:
-                'average' - average the three channels.
-                'luminosity' - luminosity method.
-                'red' - red channel.
-                'green' - green channel.
-                'blue' - blue channel.
+            The gray image to colorize.
+        ref_img : numpy array, optional
+            The reference image to use. The default is None -> calc the most similar image.
         segmentation_method : str, optional
             The segmentation method to use. The default is 'slic'.
             The available methods are:
@@ -440,27 +434,45 @@ class Colorizer:
         """
 
         if verbose:
-            print('Converting image to grayscale...')
+            print('kwargs: {}'.format(kwargs))
 
-        grayscale_image = iu.convert_rgb_to_grayscale(image, method=gray_method)
-        grayscale_image = iu.normalize_image(grayscale_image, top_val=100, convert_to_int=True)
+        # if verbose:
+        #     print('Converting image to grayscale...')
+
+        # grayscale_image = iu.convert_rgb_to_grayscale(image, method=gray_method)
+        # grayscale_image = iu.normalize_image(grayscale_image, top_val=100, convert_to_int=True)
+
+        grayscale_image = iu.normalize_image(image, top_val=100, convert_to_int=True)
 
         if verbose:
             print('searching for similar image...')
 
-        sim_gray_img = self.clf.predict([grayscale_image.flatten()])
+        if ref_img is not None:
+            if verbose:
+                print('using given reference image')
 
-        if verbose:
-            print('searching for similar image colorful version in dataset...')
+            sim_gray_img = iu.convert_rgb_to_grayscale(ref_img, method='luminosity')
+            sim_gray_img = iu.normalize_image(sim_gray_img, top_val=100, convert_to_int=True)
+            sim_gray_img = sim_gray_img.flatten()
+            sim_gray_img = sim_gray_img.astype(np.int32)
+        else:
+            sim_gray_img = self.clf.predict([grayscale_image.flatten()])
 
         sim_img = None
-        for i, img in enumerate(self.gray_images):
-            if np.array_equal(img.flatten(), sim_gray_img.flatten()):
-                sim_img = self.dataset.images[i]
-                break
 
-        if sim_img is None:
-            raise Exception('No similar image (color) was found in the dataset')
+        if ref_img is not None:
+            sim_img = ref_img.astype(np.uint8)
+        else:
+            if verbose:
+                print('searching for similar image colorful version in dataset...')
+
+            for i, img in enumerate(self.gray_images):
+                if np.array_equal(img.flatten(), sim_gray_img.flatten()):
+                    sim_img = self.dataset.images[i]
+                    break
+
+            if sim_img is None:
+                raise Exception('No similar image (color) was found in the dataset')
 
         if verbose:
             print('segmenting image...')
@@ -498,9 +510,15 @@ class Colorizer:
                 target_img_lab[index][1] = a
                 target_img_lab[index][2] = b
 
-        if verbose:
-            print('converting final image to RGB...')
-        target_img = iu.convert_lab_to_rgb(target_img_lab)
+
+        if target_output_color_space == 'rgb':
+            if verbose:
+                print('converting final image to RGB...')
+            target_img = iu.convert_lab_to_rgb(target_img_lab)
+        elif target_output_color_space == 'lab':
+            if verbose:
+                print('converting final image to LAB...')
+            target_img = target_img_lab
 
         if verbose:
             print('done!')

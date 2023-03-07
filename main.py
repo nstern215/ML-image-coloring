@@ -12,6 +12,14 @@ train_images_path = 'C:\\ws\\faces_sets\\faces_sets\\training_set'
 train_data = ImagesDataset(path=train_images_path)
 train_data.load(verbose=True)
 
+# import image_util as iu
+
+# avg_img = iu.calc_avergae_image(train_data.images)
+# avg_img = iu.normalize_image(avg_img, convert_to_int=True)
+
+# avg_img = avg_img.astype(np.uint8)
+
+
 # %% normalize gray pixels values to [0, 100]
 
 def normalize_gray_pixels(img):
@@ -51,6 +59,11 @@ for i, img in enumerate(gray_images):
         sim_img = train_data.images[i]
         break
 
+# %%
+# sim_img = avg_img.reshape(sim_img.shape)
+# sim_gray_img = color.rgb2gray(sim_img).reshape(sim_gray_img.shape)
+
+
 # %% plot
 
 fig, ax = plt.subplots(2, 2, figsize=(10, 10))
@@ -79,21 +92,60 @@ gray_img = img_as_float(gray_img)
 sim_img = img_as_float(sim_img)
 sim_gray_img = img_as_float(sim_gray_img)
 
-gray_image_segments = slic(gray_img.reshape(200, 180), n_segments=250, compactness=0.1, sigma=1)
-sim_gray_img_segments = slic(sim_gray_img.reshape(200, 180), n_segments=250, compactness=0.1, sigma=1)
+gray_image_segments = slic(gray_img.reshape(200, 180), n_segments=300, compactness=0.5, sigma=1)
+sim_gray_img_segments = slic(sim_gray_img.reshape(200, 180), n_segments=300, compactness=0.5, sigma=1)
+
+gray_img_100_segments = slic(gray_img.reshape(200, 180), n_segments=100, compactness=0.1, sigma=1)
+gray_img_500_segments = slic(gray_img.reshape(200, 180), n_segments=500, compactness=0.1, sigma=1)
 
 fig, ax = plt.subplots(1, 2, figsize=(10, 10))
 
 # ax[0].imshow(gray_img.reshape(200, 180), cmap='gray')
+
+gray_lab = np.zeros((200, 180, 3))
+gray_lab[:,:,0] = gray_img.reshape(200, 180)
+
+ax[0].imshow(mark_boundaries(color.lab2rgb(gray_lab), gray_img_100_segments), cmap='gray')
+ax[1].imshow(mark_boundaries(color.lab2rgb(gray_lab), gray_img_500_segments), cmap='gray')
+# ax[0].imshow(mark_boundaries(sim_img, gray_img_100_segments))
+# ax[1].imshow(mark_boundaries(sim_img, gray_img_500_segments))
+
+
+# ax[2].imshow(mark_boundaries(sim_img.reshape(200, 180, 3), sim_gray_img_segments))
+
+# turn off axis
+ax[0].axis('off')
+ax[1].axis('off')
+# ax[2].axis('off')
+
+plt.show()
+
+# ax[0].imshow(gray_img.reshape(200, 180), cmap='gray')
 # ax[0].set_title('Original image')
 
-ax[0].imshow(mark_boundaries(gray_img.reshape(200, 180), gray_image_segments))
-ax[0].set_title('Segmented image')
+# ax[0].imshow(mark_boundaries(gray_img.reshape(200, 180), gray_image_segments), cmap='gray')
+# ax[0].set_title('Segmented image')
 
-ax[1].imshow(mark_boundaries(sim_img.reshape(200, 180, 3), sim_gray_img_segments))
-ax[1].set_title('Segmented similar image')
+# ax[1].imshow(mark_boundaries(sim_img.reshape(200, 180, 3), sim_gray_img_segments))
+# ax[1].set_title('Segmented similar image')
 
 # plt.show()
+
+# %%
+
+# plot gray_img in 3d
+# set the pixel coordinates as the x, y axes
+# and the pixel intensity as the z axis
+
+from mpl_toolkits.mplot3d import Axes3D
+
+fig = plt.figure()
+ax = fig.add_subplot(111, projection='3d')
+
+x, y = np.meshgrid(np.arange(0, 180), np.arange(0, 200))
+ax.plot_surface(x, y, gray_img.reshape(200, 180), cmap='gray')
+
+plt.show()
 
 # %% analyze segments - features extraction from segments
 
@@ -441,59 +493,59 @@ print('score: ', score)
 
 # %% simpler method
 
-def find_pixel_color(l, sim_img_lab):
-    a = 0
-    b = 0
+# def find_pixel_color(l, sim_img_lab):
+#     a = 0
+#     b = 0
     
-    l_distance = np.inf
+#     l_distance = np.inf
 
-    for i in range(200):
-        for j in range(180):
-            l_val = sim_img_lab[i][j][0]
-            distance = np.abs(l_val - l)
+#     for i in range(200):
+#         for j in range(180):
+#             l_val = sim_img_lab[i][j][0]
+#             distance = np.abs(l_val - l)
 
-            if distance < l_distance:
-                l_distance = distance
-                a = sim_img_lab[i][j][1]
-                b = sim_img_lab[i][j][2]
+#             if distance < l_distance:
+#                 l_distance = distance
+#                 a = sim_img_lab[i][j][1]
+#                 b = sim_img_lab[i][j][2]
     
-    return a, b
+#     return a, b
     
 
-new_target = np.zeros((200, 180, 3))
+# new_target = np.zeros((200, 180, 3))
 
-# copy test_image L channel to new_target
-new_target[:, :, 0] = test_data.images[0][:, :, 0]
+# # copy test_image L channel to new_target
+# new_target[:, :, 0] = test_data.images[0][:, :, 0]
 
-from time import time
+# from time import time
 
-start = time()
+# start = time()
 
-for i in range(200):
-    for j in range(180):
-        a,b = find_pixel_color(target_img_lab[i][j][0], sim_img_lab)
-        # print(a, b)
-        new_target[i][j][1] = a
-        new_target[i][j][2] = b
+# for i in range(200):
+#     for j in range(180):
+#         a,b = find_pixel_color(target_img_lab[i][j][0], sim_img_lab)
+#         # print(a, b)
+#         new_target[i][j][1] = a
+#         new_target[i][j][2] = b
 
-print('time: ', time() - start)
+# print('time: ', time() - start)
 
-# plot sim img in the left
-# plot gray img in the middle
-# plot target img in the right
+# # plot sim img in the left
+# # plot gray img in the middle
+# # plot target img in the right
 
-fig, ax = plt.subplots(1, 3, figsize=(15, 15))
+# fig, ax = plt.subplots(1, 3, figsize=(15, 15))
 
-ax[0].imshow(sim_img)
-ax[0].set_title('sim img')
+# ax[0].imshow(sim_img)
+# ax[0].set_title('sim img')
 
-ax[1].imshow(gray_img, cmap='gray')
-ax[1].set_title('gray img')
+# ax[1].imshow(gray_img, cmap='gray')
+# ax[1].set_title('gray img')
 
-ax[2].imshow(new_target)
-ax[2].set_title('target img')
+# ax[2].imshow(new_target)
+# ax[2].set_title('target img')
 
-plt.show()
+# plt.show()
 
 # %% avg image
 
@@ -510,6 +562,8 @@ avg_img = avg_img.astype(int)
 
 
 plt.imshow(avg_img)
+# axis off
+plt.axis('off')
 plt.show()
 
 # %%
@@ -521,3 +575,5 @@ sim_gray_img = color.rgb2gray(sim_img).flatten()
 
 # set target_img_lab dtype int in range 0-255
 target_img_lab = target_img_lab.astype(int)
+
+

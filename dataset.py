@@ -20,16 +20,17 @@ import os
 
 class ImagesDataset:
 
-    def __init__(self, path, formats=['jpg']):
+    def __init__(self, path=None, formats=['jpg'], images=None):
         """
         Initialize the dataset
 
         Parameters
         ----------
-        path : str
+        path : str, optional
             The path to the data.
         formats : list, optional
             The formats of the images. The default is ['jpg'].
+        images : list, optional
 
         Returns
         -------
@@ -39,7 +40,11 @@ class ImagesDataset:
 
         self.path = path
         self.formats = formats
-        self.images = []
+
+        if images is not None:
+            self.images = images
+        else:
+            self.images = []
 
     def set_path(self, path):
         """
