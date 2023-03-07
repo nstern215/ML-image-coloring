@@ -93,9 +93,6 @@ def convert_rgb_to_grayscale(image, method='average'):
         The available methods are:
             'average' - average the three channels.
             'luminosity' - use the luminosity method.
-            'red' - use the red channel.
-            'green' - use the green channel.
-            'blue' - use the blue channel.
 
     Returns
     -------
@@ -112,12 +109,6 @@ def convert_rgb_to_grayscale(image, method='average'):
         return color.rgb2gray(image)
     elif method == 'luminosity':
         return color.rgb2lab(image)[:, :, 0]
-    elif method == 'red':
-        return image[:, :, 0]
-    elif method == 'green':
-        return image[:, :, 1]
-    elif method == 'blue':
-        return image[:, :, 2]
     else:
         raise ValueError('Invalid method')
 

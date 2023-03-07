@@ -30,14 +30,18 @@ def check_paint_quality(source, target):
 
 # %% data loading
 
-train_images_path = 'C:\\ws\\faces_sets\\faces_sets\\training_set'
+data_path = 'faces_sets'
+
+# train_images_path = 'C:\\ws\\faces_sets\\faces_sets\\training_set'
+train_images_path = os.path.join(data_path, 'training_set')
 train_data = ImagesDataset(path=train_images_path)
 train_data.load(verbose=False)
 
 colorizer = Colorizer(train_data)
 colorizer.fit_data(gray_method='luminosity', verbose=True)
 
-test_images_path = 'C:\\ws\\faces_sets\\faces_sets\\test_set'
+# test_images_path = 'C:\\ws\\faces_sets\\faces_sets\\test_set'
+test_images_path = os.path.join(data_path, 'test_set')
 test_data = ImagesDataset(path=test_images_path)
 test_data.load(verbose=False)
 
@@ -137,7 +141,7 @@ plt.show()
 # %% figure 11
 
 def remove_person_from_training_set(train_set, person_index):
-    new_data =  np.delete(train_set.images.copy(), np.arange(person_index * 19, person_index * 19 + 19), axis=0)
+    new_data = np.delete(train_set.images.copy(), np.arange(person_index * 19, person_index * 19 + 19), axis=0)
     return ImagesDataset(images=new_data)
 
 
@@ -149,7 +153,7 @@ for i, img in enumerate(gray_test_images):
     train_set = remove_person_from_training_set(train_data, i)
 
     colorizer = Colorizer(train_set)
-    colorizer.fit_data()    
+    colorizer.fit_data(gray_method='luminosity', verbose=False)    
     colorized_img = colorizer.colorize(img, verbose=False, target_output_color_space='lab')
     paint_grade.append(check_paint_quality(iu.convert_rgb_to_lab(test_data.images[i]), colorized_img[2]))
         

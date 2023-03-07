@@ -1,4 +1,11 @@
-# %% main
+"""
+@ author: Netanel Stern
+@ id: 206342255
+"""
+
+"""
+this file is used to run the colorization process on the test images
+"""
 
 from sim_image_colorizer import Colorizer
 from dataset import ImagesDataset
@@ -16,11 +23,13 @@ def check_paint_quality(source, target):
 
     return dist / (source.shape[0] * source.shape[1])
 
-train_images_path = 'C:\\ws\\faces_sets\\faces_sets\\training_set'
+data_path = 'faces_sets'
+
+train_images_path = os.path.join(data_path, 'training_set')
 train_data = ImagesDataset(path=train_images_path)
 train_data.load(verbose=False)
 
-test_images_path = 'C:\\ws\\faces_sets\\faces_sets\\test_set'
+test_images_path = os.path.join(data_path, 'test_set')
 test_data = ImagesDataset(path=test_images_path)
 test_data.load(verbose=False)
 
@@ -81,17 +90,16 @@ for i, img in enumerate(gray_test_images):
 
     plt.show()
 
-# %% figure 10
 ax = plt.subplot(111)
 
-# diff_sim_img = [15.364884885232081,10.361834027300835,12.428067830165814,12.114834200712716,16.126676657932453,10.38086614618144,13.39572247299863]
-diff_sim_img = [16.11990538481141,
- 14.373619867197606,
- 14.07947755912508,
- 15.306607495624698,
- 16.428777260351985,
- 11.234692616817878,
- 14.750202801354135]
+# those values are calculated from figure 11 in figures.py
+diff_sim_img = [14.881386207796975,
+ 9.446525560425648,
+ 11.655018105857778,
+ 10.693846522691462,
+ 14.721141194375543,
+ 10.001626495137415,
+ 12.679461626641254]
 
 X = np.arange(len(paint_grade_sim))
 
@@ -99,6 +107,5 @@ ax.bar(X, paint_grade_sim, width=0.2, label='Similar image')
 ax.bar(X + 0.2, paint_grade_avg, width=0.2, label='Average image')
 ax.bar(X + 0.4, diff_sim_img, width=0.2, label='Diff sim image')
 
-# ax.legend(loc='upper center')
 ax.legend(loc='best')
 plt.show()

@@ -62,7 +62,7 @@ class PCAClassifier:
         return self.mapping
 
 
-    def predict(self, X, distance='euclidean'):
+    def predict(self, X):
         """
         Predict the most similar image to the input image
 
@@ -70,8 +70,6 @@ class PCAClassifier:
         ----------
         X : numpy array
             The image to predict.
-        distance : str, optional
-            The distance method to use ('euclidian' or 'cosine'). The default is 'euclidean'.
 
         Returns
         -------
@@ -81,11 +79,7 @@ class PCAClassifier:
         """
         X_pca = self.pca.transform(X)
 
-        if distance == 'euclidean':
-            return self._euclidean(X_pca)
-        elif distance == 'cosine':
-            return self._cosine(X_pca)
-
+        return self._euclidean(X_pca)
 
     def _euclidean(self, X_pca):
         """
@@ -107,32 +101,6 @@ class PCAClassifier:
 
         for img, img_pca in self.mapping:
             dist = np.linalg.norm(img_pca - X_pca)
-            if dist < min_dist:
-                min_dist = dist
-                min_img = img
-
-        return min_img
-
-    def _cosine(self, X_pca):
-        """
-        Predict the most similar image to the input image using cosine distance
-
-        Parameters
-        ----------
-        X_pca : numpy array
-            The image to predict.
-
-        Returns
-        -------
-        numpy array
-            The most similar image to the input image.
-
-        """
-        min_dist = np.inf
-        min_img = None
-
-        for img, img_pca in self.mapping:
-            dist = cosine(img_pca, X_pca)
             if dist < min_dist:
                 min_dist = dist
                 min_img = img

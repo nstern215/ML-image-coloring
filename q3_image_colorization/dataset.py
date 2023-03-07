@@ -80,58 +80,6 @@ class ImagesDataset:
 
         self.formats = formats
 
-    def get_formats(self):
-        """
-        Return the formats of the images
-
-        Returns
-        -------
-        list
-            The formats of the images.
-
-        """
-
-        return self.formats
-
-    def get_images(self):
-        """
-        Return the images
-
-        Returns
-        -------
-        list
-            The images.
-
-        """
-
-        return self.images
-
-    def __len__(self):
-        """
-        Return the length of the dataset
-
-        Returns
-        -------
-        int
-            The length of the dataset.
-
-        """
-
-        return len(self.images)
-
-    def __iter__(self):
-        """
-        Iterate over the images
-
-        Returns
-        -------
-        iter
-            The iterator.
-
-        """
-
-        return iter(self.images)
-
     def load(self, verbose=False):
         """
         Load data for the dataset from given path
@@ -154,8 +102,3 @@ class ImagesDataset:
 
                 if verbose:
                     print('Num of loaded images: {}'.format(len(self.images)))
-
-if __name__ == '__main__':
-    data = ImagesDataset(path='C:\\ws\\faces_sets\\faces_sets\\training_set')
-    
-    data.load(verbose=True)

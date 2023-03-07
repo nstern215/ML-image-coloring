@@ -10,15 +10,12 @@ Sim image colorizer module use to colorize the image using image similarity
 the similarity is calculated using PCA space with grayscale version of the images
 """
 
-# %% imports
-
 from dataset import ImagesDataset
 from classifier import PCAClassifier
 import numpy as np
 import image_util as iu
 from scipy.stats import norm
 
-# %% Sim image colorizer class
 class Colorizer:
     """
     Sim image colorizer class use to colorize the image using image similarity
@@ -98,8 +95,6 @@ class Colorizer:
             segments = kwargs.pop('segments', 350)            
             compactness = kwargs.pop('compactness', 0.5)
             sigma = kwargs.pop('sigma', 1)
-
-            print(f'Calculating segmentation with segments={segments}, compactness={compactness}, sigma={sigma}')
 
             return slic(image, n_segments=segments, compactness=compactness, sigma=sigma)
 
@@ -290,7 +285,6 @@ class Colorizer:
         features_matrix = []
 
         for feature in features:
-            # features_matrix.append([feature[0], feature[10], feature[11]])
             features_matrix.append([feature[0], feature[1], feature[2], feature[3], feature[4], feature[5], feature[6], feature[7], feature[8], feature[9]])
 
         return np.array(features_matrix)
@@ -410,8 +404,6 @@ class Colorizer:
             The segmentation method to use. The default is 'slic'.
             The available methods are:
                 'slic' - SLIC method.
-
-                # todo: add more methods
         verbose : bool, optional
             Whether to print the progress. The default is True.
 
@@ -435,12 +427,6 @@ class Colorizer:
 
         if verbose:
             print('kwargs: {}'.format(kwargs))
-
-        # if verbose:
-        #     print('Converting image to grayscale...')
-
-        # grayscale_image = iu.convert_rgb_to_grayscale(image, method=gray_method)
-        # grayscale_image = iu.normalize_image(grayscale_image, top_val=100, convert_to_int=True)
 
         grayscale_image = iu.normalize_image(image, top_val=100, convert_to_int=True)
 
